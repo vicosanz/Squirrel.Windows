@@ -67,13 +67,21 @@ namespace Squirrel
 
             Task downloadRelease(string updateBaseUrl, ReleaseEntry releaseEntry, IFileDownloader urlDownloader, string targetFile, Action<int> progress)
             {
-                var baseUri = Utility.EnsureTrailingSlash(new Uri(updateBaseUrl));
-
-                var releaseEntryUrl = releaseEntry.BaseUrl + releaseEntry.Filename;
-                if (!String.IsNullOrEmpty(releaseEntry.Query)) {
-                    releaseEntryUrl += releaseEntry.Query;
+                string sourceFileUrl = "";
+                if (urlDownloader is GitHubFileDownloader downloader)
+                {
+                    sourceFileUrl = downloader.GetDownloadUrl(releaseEntry);
                 }
-                var sourceFileUrl = new Uri(baseUri, releaseEntryUrl).AbsoluteUri;
+                else
+                {
+                    var baseUri = Utility.EnsureTrailingSlash(new Uri(updateBaseUrl));
+
+                    var releaseEntryUrl = releaseEntry.BaseUrl + releaseEntry.Filename;
+                    if (!String.IsNullOrEmpty(releaseEntry.Query)) {
+                        releaseEntryUrl += releaseEntry.Query;
+                    }
+                    sourceFileUrl = new Uri(baseUri, releaseEntryUrl).AbsoluteUri;
+                }
                 File.Delete(targetFile);
 
                 return urlDownloader.DownloadFile(sourceFileUrl, targetFile, progress);

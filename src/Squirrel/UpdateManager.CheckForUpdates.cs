@@ -56,8 +56,16 @@ namespace Squirrel
 
                 // Fetch the remote RELEASES file, whether it's a local dir or an
                 // HTTP URL
-                if (Utility.IsHttpUrl(updateUrlOrPath)) {
-                    if (updateUrlOrPath.EndsWith("/")) {
+                if (urlDownloader is GitHubFileDownloader githubDownloader)
+                {
+                    var data = await githubDownloader.DownloadUrl(updateUrlOrPath);
+                    releaseFile = Encoding.UTF8.GetString(data);
+                    progress(33);
+                }
+                else if (Utility.IsHttpUrl(updateUrlOrPath))
+                {
+                    if (updateUrlOrPath.EndsWith("/"))
+                    {
                         updateUrlOrPath = updateUrlOrPath.Substring(0, updateUrlOrPath.Length - 1);
                     }
 
@@ -67,10 +75,12 @@ namespace Squirrel
 
                 retry:
 
-                    try {
+                    try
+                    {
                         var uri = Utility.AppendPathToUri(new Uri(updateUrlOrPath), "RELEASES");
 
-                        if (latestLocalRelease != null) {
+                        if (latestLocalRelease != null)
+                        {
                             uri = Utility.AddQueryParamsToUri(uri, new Dictionary<string, string> {
                                 { "id", latestLocalRelease.PackageName },
                                 { "localVersion", latestLocalRelease.Version.ToString() },
@@ -80,7 +90,9 @@ namespace Squirrel
 
                         var data = await urlDownloader.DownloadUrl(uri.ToString());
                         releaseFile = Encoding.UTF8.GetString(data);
-                    } catch (WebException ex) {
+                    }
+                    catch (WebException ex)
+                    {
                         this.Log().InfoException("Download resulted in WebException (returning blank release list)", ex);
 
                         if (retries <= 0) throw;
@@ -89,10 +101,13 @@ namespace Squirrel
                     }
 
                     progress(33);
-                } else {
+                }
+                else
+                {
                     this.Log().Info("Reading RELEASES file from {0}", updateUrlOrPath);
 
-                    if (!Directory.Exists(updateUrlOrPath)) {
+                    if (!Directory.Exists(updateUrlOrPath))
+                    {
                         var message = String.Format(
                             "The directory {0} does not exist, something is probably broken with your application",
                             updateUrlOrPath);
@@ -101,7 +116,8 @@ namespace Squirrel
                     }
 
                     var fi = new FileInfo(Path.Combine(updateUrlOrPath, "RELEASES"));
-                    if (!fi.Exists) {
+                    if (!fi.Exists)
+                    {
                         var message = String.Format(
                             "The file {0} does not exist, something is probably broken with your application",
                             fi.FullName);
@@ -109,7 +125,8 @@ namespace Squirrel
                         this.Log().Warn(message);
 
                         var packages = (new DirectoryInfo(updateUrlOrPath)).GetFiles("*.nupkg");
-                        if (packages.Length == 0) {
+                        if (packages.Length == 0)
+                        {
                             throw new Exception(message);
                         }
 
